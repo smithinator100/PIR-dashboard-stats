@@ -1,0 +1,283 @@
+.donut-chart-container {
+  position: relative;
+  width: 169px;
+  height: 169px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  transition: transform 150ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.donut-chart-container.contracting {
+  transform: scale(0.9);
+}
+
+.donut-chart-container.expanding {
+  transform: scale(1.1);
+  transition: transform 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.donut-chart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+}
+
+/* SVG circle transitions for success state */
+.donut-background-circle {
+  transition: stroke 200ms ease-out;
+}
+
+.donut-inner-circle {
+  transition: fill 200ms ease-out;
+}
+
+.donut-chart-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.donut-percentage-odometer {
+  position: absolute;
+  top: calc(50% - 8px);
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'DuckSans Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 36px;
+  line-height: 1.1111111111111112em;
+  letter-spacing: -0.1em;
+  color: #222222;
+  text-align: center;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.odometer-digit-container {
+  width: 22px;
+  height: 40px;
+  overflow: hidden;
+  display: inline-block;
+  position: relative;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 25%,
+    black 75%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 25%,
+    black 75%,
+    transparent 100%
+  );
+}
+
+.odometer-digit-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  /* Transition applied dynamically via inline styles based on delta */
+}
+
+.odometer-digit {
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.percentage-symbol {
+  margin-left: 2px;
+}
+
+/* Success state transitions for odometer - scales and fades out like skeleton content */
+.donut-percentage-odometer {
+  transition: opacity var(--skeleton-transition-duration) var(--skeleton-transition-timing), 
+              transform var(--skeleton-transition-duration) var(--skeleton-transition-timing);
+}
+
+.donut-percentage-odometer.scaling-out {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(var(--skeleton-scale));
+}
+
+.donut-percentage-odometer.hidden {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(var(--skeleton-scale));
+  pointer-events: none;
+}
+
+/* Success checkmark styles - scales in as donut expands */
+.donut-success-checkmark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.3);
+  width: 34px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 150ms cubic-bezier(0, 0, 0.2, 1), transform 150ms cubic-bezier(0, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.donut-success-checkmark.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.donut-success-checkmark svg {
+  width: 34px;
+  height: 24px;
+}
+
+.donut-label {
+  position: absolute;
+  top: calc(50% + 16px);
+  left: 50%;
+  transform: translateX(-50%) scale(1);
+  transform-origin: center center;
+  font-family: 'DuckSans Product', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: opacity var(--skeleton-transition-duration) var(--skeleton-transition-timing), 
+              transform var(--skeleton-transition-duration) var(--skeleton-transition-timing);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.2em;
+  color: #222222;
+  text-align: center;
+  width: 100px;
+  transition: opacity 150ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.donut-label.hidden {
+  opacity: 0;
+  transform: translateX(-50%) scale(var(--skeleton-scale));
+  pointer-events: none;
+}
+
+/* Progress circle transition applied dynamically via inline styles based on delta */
+
+/* Content wrapper for loading state animations */
+.donut-content-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(var(--skeleton-scale));
+  transition: opacity var(--skeleton-transition-duration) var(--skeleton-transition-timing), 
+              transform var(--skeleton-transition-duration) var(--skeleton-transition-timing);
+  pointer-events: none;
+}
+
+.donut-content-wrapper.loaded-content {
+  z-index: 2;
+}
+
+.donut-content-wrapper.loading-content {
+  z-index: 1;
+}
+
+.donut-content-wrapper.visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+/* Skeleton has inverse scale: 1.0 when hidden, var(--skeleton-scale) when visible */
+.donut-content-wrapper.loading-content {
+  transform: scale(1);
+}
+
+.donut-content-wrapper.loading-content.visible {
+  transform: scale(var(--skeleton-scale));
+}
+
+/* Loading state styles */
+.donut-skeleton {
+  background: linear-gradient(120deg, #E5E5E5 25%, #DDDDDD 50%, #E5E5E5 75%);
+  background-size: 200% 100%;
+  animation: donut-loading 1.8s ease-in-out infinite;
+  border-radius: 1000px;
+}
+
+@keyframes donut-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.donut-skeleton-ring {
+  width: 169px;
+  height: 169px;
+  border-radius: 50%;
+  background: transparent;
+  border: 10px solid #E5E5E5;
+  box-sizing: border-box;
+  position: relative;
+  animation: donut-ring-loading 1.8s ease-in-out infinite;
+}
+
+@keyframes donut-ring-loading {
+  0% {
+    border-color: #E5E5E5;
+  }
+  50% {
+    border-color: #DDDDDD;
+  }
+  100% {
+    border-color: #E5E5E5;
+  }
+}
+
+.donut-skeleton-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.donut-skeleton-percentage {
+  width: 54px;
+  height: 28px;
+  margin-top: -6px;
+}
+
+.donut-skeleton-label {
+  width: 56px;
+  height: 14px;
+}
