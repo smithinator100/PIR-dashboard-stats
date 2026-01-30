@@ -29,29 +29,13 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   gap: 14px;
-  opacity: 0;
-  transform: scale(var(--skeleton-scale));
-  transition: opacity var(--skeleton-transition-duration) var(--skeleton-transition-timing), 
-              transform var(--skeleton-transition-duration) var(--skeleton-transition-timing);
-  pointer-events: none;
-}
-
-.stat-card-content-wrapper.visible {
-  opacity: 1;
-  transform: scale(1);
+  padding-bottom: 80px; /* Reserve space for absolutely positioned footer */
   pointer-events: auto;
-}
-
-/* Skeleton has inverse scale: 1.0 when hidden, var(--skeleton-scale) when visible */
-.stat-card-content-wrapper.loading-content {
-  transform: scale(1);
-}
-
-.stat-card-content-wrapper.loading-content.visible {
-  transform: scale(var(--skeleton-scale));
+  box-sizing: border-box;
+  /* Motion.dev handles scale animation - no CSS transition needed */
 }
 
 .stat-card-title {
@@ -60,6 +44,7 @@
   align-self: stretch;
   gap: 4px;
   padding: 24px 24px 16px;
+  position: relative; /* For absolute positioning of hidden elements */
 }
 
 .stat-card-body {
@@ -85,14 +70,31 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 0; /* Allow content to shrink if needed */
+  overflow: visible; /* Allow text scaling without clipping */
+}
+
+.stat-card-content:has(.recent-scans) {
+  align-items: flex-start;
+  overflow: hidden;
+  padding: 0 24px;
+  /* Ensure height is bounded for overflow detection */
+  height: 0; /* Combined with flex: 1, this forces the element to respect its flex container's constraints */
 }
 
 .stat-card-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: row;
-  align-self: stretch;
+  align-items: flex-end;
   gap: 8px;
   padding: 16px 24px 24px;
+  min-height: 80px; /* Fixed height: 16px top padding + 40px (2 lines: 16px * 1.25 * 2) + 24px bottom padding */
+  box-sizing: border-box;
+  /* Already positioned, hidden elements will use this as reference */
 }
 
 .stat-card-info {
@@ -101,6 +103,16 @@
   font-size: 16px;
   line-height: 1.25em;
   color: rgba(0, 0, 0, 0.84);
+  min-height: 40px; /* Fixed height for 2 lines of text (16px * 1.25 * 2 = 40px) */
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Hide elements without removing from DOM to prevent layout thrashing during animation */
+.stat-card .hidden {
+  visibility: hidden;
+  position: absolute;
+  pointer-events: none;
 }
 
 /* Loading state styles */

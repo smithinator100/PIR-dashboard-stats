@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { motion } from 'motion/react'
 import './DonutChartOdometer.css'
 
+type DonutState = 'loading' | 'in-progress' | 'completed'
+
 interface DonutChartOdometerProps {
-  percentage: number
+  state: DonutState
+  percentage: number  // Only used when state is 'in-progress'
   variant: 'blue' | 'green'
   label?: string
-  isLoading?: boolean
   defaultSpeedMultiplier?: number
   completeSpeedMultiplier?: number
 }
@@ -41,14 +44,13 @@ interface DigitPosition {
 // Height of each digit in pixels
 const DIGIT_HEIGHT = 40
 // Base offset must point to an index where strip value is 0
-// so that offset + BASE_OFFSET lands on the correct digit
-const ONES_BASE_OFFSET = 110  // strip[110] = 0, allows ±100 movement
-const TENS_BASE_OFFSET = 10   // strip[10] = 0, allows ±10 movement
+const ONES_BASE_OFFSET = 110
+const TENS_BASE_OFFSET = 10
 
 // Animation timing constants
-const MIN_DURATION = 600   // Minimum animation duration in ms (increased from 300)
-const MAX_DURATION = 2400  // Maximum animation duration in ms (increased from 1200)
-const MS_PER_POINT = 25    // Additional ms per percentage point of change (increased from 15)
+const MIN_DURATION = 600
+const MAX_DURATION = 2400
+const MS_PER_POINT = 25
 
 function calculateAnimationDuration(
   delta: number, 
@@ -59,7 +61,6 @@ function calculateAnimationDuration(
   const absDelta = Math.abs(delta)
   let duration = MIN_DURATION + (absDelta * MS_PER_POINT)
   
-  // Apply speed multiplier based on target percentage
   if (targetPercentage === 100) {
     duration = duration * completeSpeedMultiplier
   } else {
@@ -69,11 +70,27 @@ function calculateAnimationDuration(
   return Math.min(duration, MAX_DURATION)
 }
 
+// Easing curves
+const EASE_OUT_EXPO = [0.22, 1, 0.36, 1] as const
+const EASE_OUT_QUINT = [0, 0, 0.2, 1] as const
+const EASE_STANDARD = [0.4, 0, 0.2, 1] as const
+
+// Motion transition configs
+const containerTransition = {
+  duration: 0.15,
+  ease: EASE_STANDARD
+}
+
+const contentTransition = {
+  duration: 0.6,
+  ease: EASE_OUT_EXPO
+}
+
 function DonutChartOdometer({ 
+  state,
   percentage, 
   variant, 
   label = 'Text info', 
-  isLoading = false,
   defaultSpeedMultiplier = 0.5,
   completeSpeedMultiplier = 0.2
 }: DonutChartOdometerProps) {
@@ -81,112 +98,125 @@ function DonutChartOdometer({
   const strokeWidth = 10
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
-  const offset = circumference - (percentage / 100) * circumference
+  
+  const [animatedPercentage, setAnimatedPercentage] = useState<number | null>(null)
+  
+  const displayPercentage: number = state === 'completed' 
+    ? (animatedPercentage !== null ? animatedPercentage : 100)
+    : (animatedPercentage !== null ? animatedPercentage : percentage)
+  const offset = circumference - (displayPercentage / 100) * circumference
+  
+  const isLoading = state === 'loading'
+  const isComplete = state === 'completed'
 
-  // Inner white ring specifications from Figma
   const innerRingSize = 149
   const innerRingRadius = (innerRingSize - strokeWidth) / 2
+  
+  const [showSuccessState, setShowSuccessState] = useState(state === 'completed')
+  const [animationPhase, setAnimationPhase] = useState<'idle' | 'contracting' | 'expanding'>('idle')
+  const [isTextScalingOut, setIsTextScalingOut] = useState(state === 'completed')
+  const [showCheckmark, setShowCheckmark] = useState(state === 'completed')
+  const animateTo99TimerRef = useRef<number | null>(null)
 
-  // Track success transition state
-  const [showSuccessState, setShowSuccessState] = useState(false)
-  const [isContracting, setIsContracting] = useState(false)
-  const [isExpanding, setIsExpanding] = useState(false)
-  const [isTextScalingOut, setIsTextScalingOut] = useState(false)
-  const [showCheckmark, setShowCheckmark] = useState(false)
-  const successTransitionTimerRef = useRef<number | null>(null)
-  const textFadeTimerRef = useRef<number | null>(null)
-
-  // Detect when we've reached 100%
-  const isComplete = percentage === 100
-
-  // Original variant colors (used before success transition)
   const strokeColor = variant === 'blue' ? '#A1D0F7' : '#CFEBDA'
   const activeColor = variant === 'blue' ? '#1074CC' : '#589D88'
-  const innerFillColor = variant === 'blue' ? '#E8F4FD' : '#CFEBDA' // Light fill for inner circle
+  const innerFillColor = variant === 'blue' ? '#E8F4FD' : '#CFEBDA'
   
-  // Display colors transition to success after ring completes
   const displayStrokeColor = showSuccessState ? SUCCESS_COLORS.outerStroke : strokeColor
   const displayActiveColor = showSuccessState ? SUCCESS_COLORS.outerStroke : activeColor
   const displayInnerFill = showSuccessState ? SUCCESS_COLORS.innerFill : innerFillColor
 
-  // Track digit positions for proper odometer animation
-  // Cap display at 99 even when percentage is 100
   const [digitPositions, setDigitPositions] = useState<DigitPosition[]>(() => {
     const displayValue = Math.min(percentage, 99)
     const digits = displayValue.toString().padStart(2, '0').split('').map(Number)
     return digits.map(value => ({ value, offset: value, isAnimating: false }))
   })
-  // Track animation duration based on delta - stored in ref to update synchronously
+  
   const animationDurationRef = useRef(MIN_DURATION)
   const previousPercentageRef = useRef(percentage)
+  const previousStateRef = useRef(state)
   const isInitialMountRef = useRef(true)
   const stripRefs = useRef<(HTMLDivElement | null)[]>([])
   
-  // Calculate animation duration synchronously during render
-  if (!isInitialMountRef.current && previousPercentageRef.current !== percentage) {
-    const delta = percentage - previousPercentageRef.current
-    animationDurationRef.current = calculateAnimationDuration(
-      delta, 
-      percentage, 
-      defaultSpeedMultiplier, 
-      completeSpeedMultiplier
-    )
+  const isInitialRender = isInitialMountRef.current
+  
+  const effectivePercentage = animatedPercentage !== null ? animatedPercentage : percentage
+  const isCompletionTransition = state === 'completed' && animatedPercentage !== null
+  if (!isInitialMountRef.current && previousPercentageRef.current !== effectivePercentage) {
+    const delta = effectivePercentage - previousPercentageRef.current
+    const absDelta = Math.abs(delta)
+    if (isCompletionTransition) {
+      animationDurationRef.current = Math.min(
+        (MIN_DURATION + (absDelta * MS_PER_POINT)) * completeSpeedMultiplier,
+        MAX_DURATION
+      )
+    } else {
+      animationDurationRef.current = calculateAnimationDuration(
+        delta, 
+        effectivePercentage, 
+        defaultSpeedMultiplier, 
+        completeSpeedMultiplier
+      )
+    }
   }
   
   const animationDuration = animationDurationRef.current
 
-  // Normalize offsets after animation completes to prevent unbounded growth
   const normalizeOffsets = useCallback(() => {
-    setDigitPositions(prev => {
-      // Cap at 99 for display
-      const displayValue = Math.min(percentage, 99)
+    setDigitPositions(() => {
+      const effectivePercentage = animatedPercentage !== null ? animatedPercentage : percentage
+      const displayValue = Math.min(effectivePercentage, 99)
       const digits = displayValue.toString().padStart(2, '0').split('').map(Number)
       return [
         { value: digits[0], offset: digits[0], isAnimating: false },
         { value: digits[1], offset: digits[1], isAnimating: false }
       ]
     })
-  }, [percentage])
+  }, [percentage, animatedPercentage])
 
+  const prevStateForAnimationRef = useRef(state)
+  
   useEffect(() => {
-    // Skip animation on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false
+      prevStateForAnimationRef.current = state
       return
     }
 
-    // Skip if percentage hasn't changed
-    if (previousPercentageRef.current === percentage) {
+    if (state === 'completed' && animatedPercentage === null) {
+      prevStateForAnimationRef.current = state
+      return
+    }
+
+    const wasCompleted = prevStateForAnimationRef.current === 'completed'
+    const isNowInProgress = state === 'in-progress'
+    if (wasCompleted && isNowInProgress) {
+      previousPercentageRef.current = 99
+    }
+    prevStateForAnimationRef.current = state
+
+    const effectivePercentage = animatedPercentage !== null ? animatedPercentage : percentage
+
+    if (previousPercentageRef.current === effectivePercentage) {
       return
     }
 
     const prevValue = previousPercentageRef.current
-    const newValue = percentage
-    // Use the ring's animation duration (calculated from full delta including 100%)
-    // This ensures odometer and ring finish together
+    const newValue = effectivePercentage
     const duration = animationDurationRef.current
 
-    // For odometer display: cap at 99% even when percentage is 100%
-    // This keeps the odometer at 99 while the ring completes to 100%
     const displayValue = Math.min(newValue, 99)
     const prevDisplayValue = Math.min(prevValue, 99)
     
-    // Skip odometer animation if both display values are the same (e.g., going from 99 to 100)
     if (displayValue === prevDisplayValue) {
       previousPercentageRef.current = newValue
       return
     }
 
-    // Calculate digit rotations based on mechanical odometer behavior:
-    // - Ones digit rotates by the total value change
-    // - Tens digit rotates by how many times we cross a tens boundary
     const newDigits = displayValue.toString().padStart(2, '0').split('').map(Number)
     const displayDelta = displayValue - prevDisplayValue
     
-    // Ones digit (index 1): rotates once per unit change
     const onesDelta = displayDelta
-    
-    // Tens digit (index 0): rotates once per 10 units
     const tensDelta = Math.floor(displayValue / 10) - Math.floor(prevDisplayValue / 10)
 
     const newPositions: DigitPosition[] = [
@@ -205,16 +235,13 @@ function DonutChartOdometer({
     setDigitPositions(newPositions)
     previousPercentageRef.current = newValue
 
-    // Normalize offsets after animation completes
     const timer = setTimeout(() => {
-      // Temporarily disable transition, reset offsets, then re-enable
       stripRefs.current.forEach(ref => {
         if (ref) ref.style.transition = 'none'
       })
       
       normalizeOffsets()
       
-      // Re-enable transition after a frame
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           stripRefs.current.forEach(ref => {
@@ -225,185 +252,277 @@ function DonutChartOdometer({
     }, duration + 50)
 
     return () => clearTimeout(timer)
-  }, [percentage, digitPositions, normalizeOffsets])
+  }, [percentage, animatedPercentage, digitPositions, normalizeOffsets])
 
-  // Handle success transition
-  // Text fades before 99%, Phase 2 starts slightly before Phase 1 ends
-  const TEXT_FADE_DURATION = 300 // matches CSS transition duration
-  const PHASE_OVERLAP = 100 // ms of overlap between phases
-  
   useEffect(() => {
-    // Clear any existing timers
-    if (successTransitionTimerRef.current) {
-      clearTimeout(successTransitionTimerRef.current)
-      successTransitionTimerRef.current = null
-    }
-    if (textFadeTimerRef.current) {
-      clearTimeout(textFadeTimerRef.current)
-      textFadeTimerRef.current = null
+    if (animateTo99TimerRef.current) {
+      clearTimeout(animateTo99TimerRef.current)
+      animateTo99TimerRef.current = null
     }
 
-    if (isComplete) {
-      // Start text fade 300ms before animation ends (so it's faded before 99%)
-      const textFadeStart = Math.max(0, animationDuration - TEXT_FADE_DURATION)
-      textFadeTimerRef.current = window.setTimeout(() => {
-        setIsTextScalingOut(true)
-      }, textFadeStart)
+    const wasInProgress = previousStateRef.current === 'in-progress'
+    const isNowCompleted = state === 'completed'
 
-      // Phase 2 starts slightly before Phase 1 ends (overlap)
-      const phase2Start = Math.max(0, animationDuration - PHASE_OVERLAP)
-      successTransitionTimerRef.current = window.setTimeout(() => {
-        // Color changes to green + donut contracts
-        setShowSuccessState(true)
-        setIsContracting(true)
-        
-        // After contraction completes, expand with checkmark
-        setTimeout(() => {
-          setIsContracting(false)
-          setShowCheckmark(true)
-          setIsExpanding(true)
-          
-          // Reset expand after animation completes
-          setTimeout(() => {
-            setIsExpanding(false)
-          }, 150)
-        }, 200)
-        
-      }, phase2Start) // Phase 2 starts 100ms before ring animation ends
-    } else {
-      // Reset all states if we go below 100%
-      setShowSuccessState(false)
-      setIsContracting(false)
-      setIsExpanding(false)
-      setShowCheckmark(false)
-      setIsTextScalingOut(false)
+    if (isNowCompleted && wasInProgress && !isInitialRender) {
+      const currentPercentage = percentage
+      const delta = 99 - currentPercentage
+      const absDelta = Math.abs(delta)
+      const duration = Math.min(
+        (MIN_DURATION + (absDelta * MS_PER_POINT)) * completeSpeedMultiplier,
+        MAX_DURATION
+      )
+
+      setAnimatedPercentage(99)
+      animationDurationRef.current = duration
+
+      animateTo99TimerRef.current = window.setTimeout(() => {
+        previousPercentageRef.current = 99
+        setAnimatedPercentage(null)
+      }, duration)
+    } else if (!isNowCompleted) {
+      setAnimatedPercentage(null)
     }
 
     return () => {
-      if (successTransitionTimerRef.current) {
-        clearTimeout(successTransitionTimerRef.current)
-      }
-      if (textFadeTimerRef.current) {
-        clearTimeout(textFadeTimerRef.current)
+      if (animateTo99TimerRef.current) {
+        clearTimeout(animateTo99TimerRef.current)
       }
     }
-  }, [isComplete, animationDuration])
+  }, [state, percentage, completeSpeedMultiplier, isInitialRender])
 
-  // Tens digit strip: 30 digits (3 repetitions) - tens digit only moves 0-10
+  useEffect(() => {
+    const wasCompleted = previousStateRef.current === 'completed'
+    const wasInProgress = previousStateRef.current === 'in-progress'
+    previousStateRef.current = state
+
+    if ((isComplete && wasCompleted) || (!isComplete && !wasCompleted && !wasInProgress)) {
+      return
+    }
+
+    if (isComplete) {
+      if (isInitialRender) {
+        setIsTextScalingOut(true)
+        setShowSuccessState(true)
+        setShowCheckmark(true)
+        return
+      }
+
+      const animDuration = wasInProgress ? animationDurationRef.current : 0
+      const textFadeStart = Math.round(animDuration * 0.4)
+      
+      const timer1 = setTimeout(() => {
+        setIsTextScalingOut(true)
+      }, textFadeStart)
+
+      const timer2 = setTimeout(() => {
+        setShowSuccessState(true)
+        setAnimationPhase('contracting')
+      }, animDuration + 50)
+
+      const timer3 = setTimeout(() => {
+        setAnimationPhase('expanding')
+        setShowCheckmark(true)
+      }, animDuration + 250)
+
+      const timer4 = setTimeout(() => {
+        setAnimationPhase('idle')
+      }, animDuration + 400)
+
+      return () => {
+        clearTimeout(timer1)
+        clearTimeout(timer2)
+        clearTimeout(timer3)
+        clearTimeout(timer4)
+      }
+    } else {
+      setShowSuccessState(false)
+      setAnimationPhase('idle')
+      setShowCheckmark(false)
+      setIsTextScalingOut(false)
+    }
+  }, [state, isComplete, isInitialRender])
+
   const tensDigitStrip = Array.from({ length: 30 }, (_, i) => i % 10)
-  
-  // Ones digit strip: 220 digits (22 repetitions) - ones digit can rotate up to 100 times
   const onesDigitStrip = Array.from({ length: 220 }, (_, i) => i % 10)
 
-  // Use linear timing when animating to 99% (no ease-out), otherwise use smooth easing
-  // This ensures odometer and ring finish together when going to 100%
-  const isAnimatingTo99 = percentage >= 99 && !showSuccessState
+  const effectivePercentageForTiming = animatedPercentage !== null ? animatedPercentage : percentage
+  const isAnimatingTo99 = effectivePercentageForTiming >= 99 && !showSuccessState
   const odometerTiming = isAnimatingTo99 ? 'linear' : 'cubic-bezier(0.22, 1, 0.36, 1)'
   const ringTiming = isAnimatingTo99 ? 'linear' : 'cubic-bezier(0.22, 1, 0.36, 1)'
 
-  return (
-    <div className={`donut-chart-container ${isContracting ? 'contracting' : ''} ${isExpanding ? 'expanding' : ''}`}>
-      {/* Loaded content */}
-      <div className={`donut-content-wrapper loaded-content ${!isLoading ? 'visible' : ''}`}>
-        <svg width={size} height={size} className="donut-chart" viewBox={`0 0 ${size} ${size}`}>
-          {/* Background circle */}
-          <circle
-            className="donut-background-circle"
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke={displayStrokeColor}
-            strokeWidth={strokeWidth}
-          />
-          {/* Progress circle */}
-          <circle
-            className="donut-progress-circle"
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke={displayActiveColor}
-            strokeWidth={strokeWidth}
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            strokeLinecap="round"
-            transform={`rotate(-90 ${size / 2} ${size / 2})`}
-            style={{
-              transition: `stroke-dashoffset ${animationDuration}ms ${ringTiming}, stroke 200ms ease-out`
-            }}
-          />
-          {/* Inner circle - white ring in progress, filled in success */}
-          <circle
-            className="donut-inner-circle"
-            cx={size / 2}
-            cy={size / 2}
-            r={innerRingRadius}
-            fill={displayInnerFill}
-            stroke="#FFFFFF"
-            strokeWidth={strokeWidth}
-          />
-        </svg>
-        <div className="donut-chart-text">
-          {/* Percentage odometer - starts scaling out at threshold, fully hidden when success state activates */}
-          <div className={`donut-percentage-odometer ${isTextScalingOut && !showSuccessState ? 'scaling-out' : ''} ${showSuccessState ? 'hidden' : ''}`}>
-            {/* Tens digit */}
-            <div className="odometer-digit-container">
-              <div 
-                ref={el => stripRefs.current[0] = el}
-                className="odometer-digit-strip"
-                style={{
-                  transform: `translateY(-${(digitPositions[0].offset + TENS_BASE_OFFSET) * DIGIT_HEIGHT}px)`,
-                  transition: `transform ${animationDuration}ms ${odometerTiming}`
-                }}
-              >
-                {tensDigitStrip.map((num, i) => (
-                  <div key={i} className="odometer-digit">
-                    {num}
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Ones digit */}
-            <div className="odometer-digit-container">
-              <div 
-                ref={el => stripRefs.current[1] = el}
-                className="odometer-digit-strip"
-                style={{
-                  transform: `translateY(-${(digitPositions[1].offset + ONES_BASE_OFFSET) * DIGIT_HEIGHT}px)`,
-                  transition: `transform ${animationDuration}ms ${odometerTiming}`
-                }}
-              >
-                {onesDigitStrip.map((num, i) => (
-                  <div key={i} className="odometer-digit">
-                    {num}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <span className="percentage-symbol">%</span>
-          </div>
-          
-          {/* Success checkmark - shown after contraction completes */}
-          <div className={`donut-success-checkmark ${showCheckmark ? 'visible' : ''}`}>
-            <CheckmarkIcon />
-          </div>
-          
-          {/* Label - hidden when text starts scaling out or success state is active */}
-          <div className={`donut-label ${isTextScalingOut || showSuccessState ? 'hidden' : ''}`}>{label}</div>
-        </div>
-      </div>
+  // Calculate container scale based on animation phase
+  const getContainerScale = () => {
+    switch (animationPhase) {
+      case 'contracting': return 0.9
+      case 'expanding': return 1.1
+      default: return 1
+    }
+  }
 
-      {/* Loading content */}
-      <div className={`donut-content-wrapper loading-content ${isLoading ? 'visible' : ''}`}>
-        <div className="donut-skeleton-ring"></div>
-        <div className="donut-skeleton-center">
-          <div className="donut-skeleton donut-skeleton-percentage"></div>
-          <div className="donut-skeleton donut-skeleton-label"></div>
-        </div>
-      </div>
-    </div>
+  // Use longer duration when settling back from expanded state
+  const getContainerTransition = () => {
+    if (animationPhase === 'idle' && showSuccessState) {
+      return { duration: 0.4, ease: EASE_STANDARD }
+    }
+    return containerTransition
+  }
+
+  return (
+    <motion.div 
+      className="donut-chart-container"
+      animate={{ 
+        scale: getContainerScale(),
+        y: -8
+      }}
+      transition={getContainerTransition()}
+    >
+      {/* SVG Ring - always rendered, transitions colors */}
+      <svg width={size} height={size} className="donut-chart" viewBox={`0 0 ${size} ${size}`}>
+        {/* Background circle - transitions from skeleton gray to variant color */}
+        <motion.circle
+          className="donut-background-circle"
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          strokeWidth={strokeWidth}
+          animate={{ stroke: isLoading ? '#E5E5E5' : displayStrokeColor }}
+          transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
+        />
+        {/* Progress circle - hidden when loading */}
+        <motion.circle
+          className="donut-progress-circle"
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          animate={{
+            stroke: displayActiveColor,
+            strokeDashoffset: isLoading ? circumference : offset,
+            opacity: isLoading ? 0 : 1
+          }}
+          transition={{ 
+            strokeDashoffset: { duration: animationDuration / 1000, ease: isAnimatingTo99 ? 'linear' : EASE_OUT_EXPO },
+            stroke: { duration: 0.2, ease: 'easeOut' },
+            opacity: { duration: 0.3, ease: 'easeOut' }
+          }}
+        />
+        {/* Inner circle */}
+        <motion.circle
+          className="donut-inner-circle"
+          cx={size / 2}
+          cy={size / 2}
+          r={innerRingRadius}
+          stroke="#FFFFFF"
+          strokeWidth={strokeWidth}
+          fill={SUCCESS_COLORS.innerFill}
+          animate={{ 
+            fillOpacity: showSuccessState ? 1 : 0,
+            strokeOpacity: isLoading ? 0 : 1
+          }}
+          transition={{ 
+            fillOpacity: { duration: 0.2, ease: 'easeOut' },
+            strokeOpacity: { duration: 0.6, ease: EASE_OUT_EXPO }
+          }}
+        />
+      </svg>
+
+      {/* Success checkmark - positioned at center of donut */}
+      <motion.div 
+        className="donut-success-checkmark"
+        initial={{ x: '-50%', y: '-50%', scale: 0 }}
+        animate={{
+          scale: showCheckmark ? 1 : 0,
+          x: '-50%',
+          y: '-50%'
+        }}
+        transition={{ duration: 0.15, ease: EASE_OUT_QUINT }}
+        style={{ opacity: showCheckmark ? 1 : 0, pointerEvents: showCheckmark ? 'auto' : 'none' }}
+      >
+        <CheckmarkIcon />
+      </motion.div>
+
+      {/* Skeleton center content */}
+      <motion.div
+        className="donut-skeleton-center"
+        initial={{ x: '-50%', y: '-50%', opacity: isLoading ? 1 : 0, scale: isLoading ? 1 : 0.85 }}
+        animate={{ 
+          opacity: isLoading ? 1 : 0, 
+          scale: isLoading ? 1 : 0.85,
+          x: '-50%',
+          y: '-50%'
+        }}
+        transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
+        style={{ pointerEvents: isLoading ? 'auto' : 'none' }}
+      >
+        <div className="donut-skeleton donut-skeleton-percentage"></div>
+        <div className="donut-skeleton donut-skeleton-label"></div>
+      </motion.div>
+
+      {/* Percentage and label */}
+      <motion.div 
+        className="donut-chart-text"
+        initial={{ x: '-50%', y: '-50%', opacity: isLoading ? 0 : 1, scale: isLoading ? 0.85 : 1 }}
+        animate={{ 
+          opacity: isLoading ? 0 : (showCheckmark ? 0 : (isTextScalingOut ? 0 : 1)), 
+          scale: isLoading ? 0.85 : (showCheckmark ? 0.85 : (isTextScalingOut ? 0.85 : 1)),
+          x: '-50%',
+          y: '-50%'
+        }}
+        transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
+        style={{ pointerEvents: isLoading || showCheckmark ? 'none' : 'auto' }}
+      >
+            {/* Percentage odometer */}
+            <div className="donut-percentage-odometer">
+              {/* Tens digit */}
+              <div className="odometer-digit-container">
+                <div 
+                  ref={el => stripRefs.current[0] = el}
+                  className="odometer-digit-strip"
+                  style={{
+                    transform: `translateY(-${(digitPositions[0].offset + TENS_BASE_OFFSET) * DIGIT_HEIGHT}px)`,
+                    transition: `transform ${animationDuration}ms ${odometerTiming}`
+                  }}
+                >
+                  {tensDigitStrip.map((num, i) => (
+                    <div key={i} className="odometer-digit">
+                      {num}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Ones digit */}
+              <div className="odometer-digit-container">
+                <div 
+                  ref={el => stripRefs.current[1] = el}
+                  className="odometer-digit-strip"
+                  style={{
+                    transform: `translateY(-${(digitPositions[1].offset + ONES_BASE_OFFSET) * DIGIT_HEIGHT}px)`,
+                    transition: `transform ${animationDuration}ms ${odometerTiming}`
+                  }}
+                >
+                  {onesDigitStrip.map((num, i) => (
+                    <div key={i} className="odometer-digit">
+                      {num}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <span className="percentage-symbol">%</span>
+            </div>
+            
+            {/* Label */}
+            <div className="donut-label">
+              {label}
+            </div>
+          </motion.div>
+    </motion.div>
   )
 }
 
 export default DonutChartOdometer
+export type { DonutState }

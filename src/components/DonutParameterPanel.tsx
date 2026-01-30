@@ -1,29 +1,35 @@
+import type { DonutState } from './DonutChartOdometer'
 import './DonutParameterPanel.css'
 
 interface DonutParameterPanelProps {
+  state: DonutState
   percentage: number
   label: string
-  isLoading: boolean
   defaultSpeedMultiplier: number
   completeSpeedMultiplier: number
+  onStateChange: (state: DonutState) => void
   onPercentageChange: (percentage: number) => void
   onLabelChange: (label: string) => void
-  onLoadingToggle: (isLoading: boolean) => void
   onDefaultSpeedMultiplierChange: (multiplier: number) => void
   onCompleteSpeedMultiplierChange: (multiplier: number) => void
 }
 
-const PERCENTAGE_CHIPS = [15, 25, 50, 75, 100]
+const PERCENTAGE_CHIPS = [15, 25, 50, 75, 99]
+const STATE_OPTIONS: { value: DonutState; label: string }[] = [
+  { value: 'loading', label: 'Loading' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+]
 
 function DonutParameterPanel({ 
+  state,
   percentage, 
   label, 
-  isLoading, 
   defaultSpeedMultiplier,
   completeSpeedMultiplier,
+  onStateChange,
   onPercentageChange, 
   onLabelChange, 
-  onLoadingToggle,
   onDefaultSpeedMultiplierChange,
   onCompleteSpeedMultiplierChange
 }: DonutParameterPanelProps) {
@@ -37,6 +43,7 @@ function DonutParameterPanel({
               key={value}
               className={`percentage-chip ${percentage === value ? 'active' : ''}`}
               onClick={() => onPercentageChange(value)}
+              disabled={state !== 'in-progress'}
             >
               {value}%
             </button>
@@ -136,17 +143,18 @@ function DonutParameterPanel({
       </div>
 
       <div className="parameter-section">
-        <label className="parameter-label">Loading State</label>
-        <label className="toggle-container">
-          <input
-            type="checkbox"
-            checked={isLoading}
-            onChange={(e) => onLoadingToggle(e.target.checked)}
-            className="toggle-input"
-          />
-          <span className="toggle-slider"></span>
-          <span className="toggle-label">{isLoading ? 'Loading' : 'Loaded'}</span>
-        </label>
+        <label className="parameter-label">State</label>
+        <div className="state-chips">
+          {STATE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              className={`state-chip ${state === option.value ? 'active' : ''}`}
+              onClick={() => onStateChange(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
