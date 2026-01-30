@@ -16,7 +16,7 @@ const TOTAL_SITES = 50
 
 function App() {
   const [activePage, setActivePage] = useState<'card' | 'donut' | 'barChart' | 'recentScans'>('card')
-  const [cardSize, setCardSize] = useState<'medium' | 'large'>('medium')
+  const [cardSize] = useState<'medium' | 'large'>('medium')
   const [cardDonutState, setCardDonutState] = useState<DonutState>('loading')
   const [cardDonutPercentage, setCardDonutPercentage] = useState(0)
   const [cardBarChartState, setCardBarChartState] = useState<BarState>('loading')

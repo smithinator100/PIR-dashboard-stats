@@ -1,4 +1,4 @@
-import DonutChart from './DonutChart'
+import DonutChart from './DonutChartOdometer'
 import './StatVertical.css'
 
 interface StatVerticalProps {
@@ -30,7 +30,7 @@ function StatVertical({
         </div>
       </div>
       <div className="stat-content">
-        <DonutChart percentage={percentage} variant={variant} />
+        <DonutChart state="in-progress" percentage={percentage} variant={variant} />
         {hasRecords && recordsCount && (
           <div className="stat-info">
             {recordsCount} sites have records of your personal info

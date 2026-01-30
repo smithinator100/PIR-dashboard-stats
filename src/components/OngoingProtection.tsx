@@ -16,12 +16,12 @@ function OngoingProtection() {
     {
       date: 'Mon, 19 Jan',
       brokers: [
-        { name: '411', color: '#2ABEE3' },
-        { name: 'Curadvisor', color: '#FFFFFF' },
-        { name: 'NeighborWho', color: '#FABD1B' },
-        { name: 'Intelius', color: '#000000' },
-        { name: 'Dataveria', color: '#FFFFFF' },
-        { name: 'IdentityPi', color: '#D21847' },
+        { name: '411', color: '#2ABEE3', logo: '' },
+        { name: 'Curadvisor', color: '#FFFFFF', logo: '' },
+        { name: 'NeighborWho', color: '#FABD1B', logo: '' },
+        { name: 'Intelius', color: '#000000', logo: '' },
+        { name: 'Dataveria', color: '#FFFFFF', logo: '' },
+        { name: 'IdentityPi', color: '#D21847', logo: '' },
       ],
     },
   ]

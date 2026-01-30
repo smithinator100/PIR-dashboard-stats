@@ -81,10 +81,10 @@ const containerTransition = {
   ease: EASE_STANDARD
 }
 
-const contentTransition = {
-  duration: 0.6,
-  ease: EASE_OUT_EXPO
-}
+// const contentTransition = {
+//   duration: 0.6,
+//   ease: EASE_OUT_EXPO
+// }
 
 function DonutChartOdometer({ 
   state,
@@ -120,11 +120,11 @@ function DonutChartOdometer({
 
   const strokeColor = variant === 'blue' ? '#A1D0F7' : '#CFEBDA'
   const activeColor = variant === 'blue' ? '#1074CC' : '#589D88'
-  const innerFillColor = variant === 'blue' ? '#E8F4FD' : '#CFEBDA'
+  // const innerFillColor = variant === 'blue' ? '#E8F4FD' : '#CFEBDA'
   
   const displayStrokeColor = showSuccessState ? SUCCESS_COLORS.outerStroke : strokeColor
   const displayActiveColor = showSuccessState ? SUCCESS_COLORS.outerStroke : activeColor
-  const displayInnerFill = showSuccessState ? SUCCESS_COLORS.innerFill : innerFillColor
+  // const displayInnerFill = showSuccessState ? SUCCESS_COLORS.innerFill : innerFillColor
 
   const [digitPositions, setDigitPositions] = useState<DigitPosition[]>(() => {
     const displayValue = Math.min(percentage, 99)
@@ -348,7 +348,7 @@ function DonutChartOdometer({
   const effectivePercentageForTiming = animatedPercentage !== null ? animatedPercentage : percentage
   const isAnimatingTo99 = effectivePercentageForTiming >= 99 && !showSuccessState
   const odometerTiming = isAnimatingTo99 ? 'linear' : 'cubic-bezier(0.22, 1, 0.36, 1)'
-  const ringTiming = isAnimatingTo99 ? 'linear' : 'cubic-bezier(0.22, 1, 0.36, 1)'
+  // const ringTiming = isAnimatingTo99 ? 'linear' : 'cubic-bezier(0.22, 1, 0.36, 1)'
 
   // Calculate container scale based on animation phase
   const getContainerScale = () => {
