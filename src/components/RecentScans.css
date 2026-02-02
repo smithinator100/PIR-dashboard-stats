@@ -41,7 +41,7 @@
   width: 100%;
   max-width: 475px;
   flex: 1;
-  overflow-y: auto;
+  overflow-y: hidden;
   min-height: 0; /* Allow flex shrinking for overflow detection */
 }
 
