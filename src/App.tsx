@@ -14,18 +14,9 @@ import { LogoAnimationParameterPanel } from './components/LogoAnimationParameter
 import './App.css'
 import './components/BarChart.css'
 
-// Constants moved outside component to avoid dependency issues
-const cardPercentages = [20, 60, 80]
-const cardBarChartPercentages = [25, 50, 75]
-const TOTAL_SITES = 50
 
 function App() {
   const [activePage, setActivePage] = useState<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | 'cardRecords' | 'logos'>('card')
-  const [cardDonutState, setCardDonutState] = useState<DonutState>('loading')
-  const [cardDonutPercentage, setCardDonutPercentage] = useState(0)
-  const [cardBarChartState, setCardBarChartState] = useState<BarState>('loading')
-  const cardBarChartTotal = 12
-  const [cardBarChartCompletedPercentage, setCardBarChartCompletedPercentage] = useState(0)
   const [donutState, setDonutState] = useState<DonutState>('in-progress')
   const [donutPercentage, setDonutPercentage] = useState(50)
   const [donutLabel, setDonutLabel] = useState('Text info')
@@ -81,34 +72,15 @@ function App() {
       // Reset states to loading first (only if switching pages, not on initial load)
       if (isSwitchingToCard) {
         setRecentScansState('loading')
-        setCardDonutState('loading')
-        setCardDonutPercentage(0)
-        setCardBarChartState('loading')
-        setCardBarChartCompletedPercentage(0)
       }
 
-      // Stagger effect: Recent Scans first, then Donut, then Bar Chart
       // After 1400ms, transition Recent Scans to scanning
       const recentScansTimer = setTimeout(() => {
         setRecentScansState('scanning')
       }, 1400)
 
-      // After 1600ms, transition donut to in-progress
-      const donutTimer = setTimeout(() => {
-        setCardDonutState('in-progress')
-        setCardDonutPercentage(cardPercentages[0])
-      }, 1600)
-
-      // After 1800ms, transition bar chart to in-progress
-      const barChartTimer = setTimeout(() => {
-        setCardBarChartState('in-progress')
-        setCardBarChartCompletedPercentage(cardBarChartPercentages[0])
-      }, 1800)
-
       return () => {
         clearTimeout(recentScansTimer)
-        clearTimeout(donutTimer)
-        clearTimeout(barChartTimer)
       }
     }
 
