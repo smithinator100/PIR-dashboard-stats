@@ -182,7 +182,7 @@ function DonutChartOdometer({
         { value: digits[1], offset: digits[1], isAnimating: false }
       ]
     })
-  }, [percentage, animatedPercentage])
+  }, [percentage, animatedPercentage, state])
 
   const prevStateForAnimationRef = useRef(state)
   
@@ -274,13 +274,23 @@ function DonutChartOdometer({
     const isNowCompleted = state === 'completed'
 
     if (isNowCompleted && wasInProgress && !isInitialRender) {
-      const currentPercentage = percentage
+      // Use previousPercentageRef which tracks the actual displayed percentage, not the prop
+      const currentPercentage = previousPercentageRef.current
       const delta = 99 - currentPercentage
       const absDelta = Math.abs(delta)
       const duration = Math.min(
         (MIN_DURATION + (absDelta * MS_PER_POINT)) * completeSpeedMultiplier,
         MAX_DURATION
       )
+
+      // Normalize digit positions before starting completion animation to prevent "00" flash
+      // This ensures offsets match the current display value, not stale cumulative offsets
+      const displayValue = Math.min(currentPercentage, 99)
+      const digits = displayValue.toString().padStart(2, '0').split('').map(Number)
+      setDigitPositions([
+        { value: digits[0], offset: digits[0], isAnimating: false },
+        { value: digits[1], offset: digits[1], isAnimating: false }
+      ])
 
       setAnimatedPercentage(99)
       animationDurationRef.current = duration
@@ -326,7 +336,7 @@ function DonutChartOdometer({
       
       // Text fade starts before the transition, with lead time
       const textFadeStart = Math.max(0, transitionStartTime - TEXT_FADE_LEAD_TIME)
-      
+
       const timer1 = setTimeout(() => {
         setIsTextScalingOut(true)
       }, textFadeStart)

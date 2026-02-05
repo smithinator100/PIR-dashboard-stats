@@ -10,6 +10,10 @@
   gap: 14px;
   position: relative;
   overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .card-data-broker-sites-wrapper {

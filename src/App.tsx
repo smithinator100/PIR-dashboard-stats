@@ -8,6 +8,8 @@ import { RecentScansParameterPanel } from './components/RecentScansParameterPane
 import { RecentScans } from './components/RecentScans'
 import { CardDataBrokerSites, type CardDataBrokerSitesState } from './components/CardDataBrokerSites'
 import { CardDataBrokerSitesParameterPanel } from './components/CardDataBrokerSitesParameterPanel'
+import { CardRecords, type CardRecordsState } from './components/CardRecords'
+import { CardRecordsParameterPanel } from './components/CardRecordsParameterPanel'
 import './App.css'
 import './components/BarChart.css'
 
@@ -17,7 +19,7 @@ const cardBarChartPercentages = [25, 50, 75]
 const TOTAL_SITES = 50
 
 function App() {
-  const [activePage, setActivePage] = useState<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites'>('card')
+  const [activePage, setActivePage] = useState<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | 'cardRecords'>('card')
   const [cardSize] = useState<'medium' | 'large'>('medium')
   const [cardDonutState, setCardDonutState] = useState<DonutState>('loading')
   const [cardDonutPercentage, setCardDonutPercentage] = useState(0)
@@ -44,8 +46,13 @@ function App() {
   const [dataBrokerCurrentBrokerName, setDataBrokerCurrentBrokerName] = useState('Spokeo')
   const [dataBrokerSitesWithRecords, setDataBrokerSitesWithRecords] = useState(10)
 
+  // Card Records state
+  const [cardRecordsState, setCardRecordsState] = useState<CardRecordsState>('loading')
+  const [cardRecordsTotalRecords, setCardRecordsTotalRecords] = useState(12)
+  const [cardRecordsCompletedPercentage, setCardRecordsCompletedPercentage] = useState(25)
+
   // Track previous page to detect when switching TO card page
-  const previousPageRef = useRef<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | null>(null)
+  const previousPageRef = useRef<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | 'cardRecords' | null>(null)
 
   // Handle card page load sequence: loading -> in-progress transitions
   useEffect(() => {
@@ -168,6 +175,55 @@ function App() {
     }
   }
 
+  const handleDataBrokerSitesCardClick = () => {
+    // Cycle: Loading -> Scanning -> In-progress -> Complete -> Loading
+    switch (dataBrokerState) {
+      case 'loading':
+        setDataBrokerState('scanning')
+        break
+      case 'scanning':
+        setDataBrokerState('in-progress')
+        break
+      case 'in-progress':
+        setDataBrokerState('complete')
+        break
+      case 'complete':
+        setDataBrokerState('loading')
+        break
+    }
+  }
+
+  const handleRecordsCardClick = () => {
+    // Cycle: Loading -> Scanning -> Records Found -> In-progress (25%) -> 50% -> 75% -> Complete -> Loading
+    const recordsPercentages = [25, 50, 75]
+    switch (cardRecordsState) {
+      case 'loading':
+        setCardRecordsState('scanning')
+        break
+      case 'scanning':
+        setCardRecordsState('records-found')
+        break
+      case 'records-found':
+        setCardRecordsState('in-progress')
+        setCardRecordsCompletedPercentage(recordsPercentages[0])
+        break
+      case 'in-progress': {
+        const currentIndex = recordsPercentages.indexOf(cardRecordsCompletedPercentage)
+        if (currentIndex === recordsPercentages.length - 1) {
+          setCardRecordsState('complete')
+        } else {
+          const nextIndex = currentIndex === -1 ? 0 : currentIndex + 1
+          setCardRecordsCompletedPercentage(recordsPercentages[nextIndex])
+        }
+        break
+      }
+      case 'complete':
+        setCardRecordsState('loading')
+        setCardRecordsCompletedPercentage(0)
+        break
+    }
+  }
+
   // Calculate footer text for bar chart based on state
   const getBarChartFooterText = (percentage: number, state: BarState): string => {
     if (state === 'loading') {
@@ -216,6 +272,12 @@ function App() {
           >
             Card : Data Broker Sites
           </li>
+          <li 
+            className={`sidebar-item ${activePage === 'cardRecords' ? 'active' : ''}`}
+            onClick={() => setActivePage('cardRecords')}
+          >
+            Card : Records
+          </li>
         </ul>
       </div>
       <div className="content">
@@ -232,37 +294,20 @@ function App() {
               >
                 <RecentScans scanCount={cardScanCount} isLoading={cardRecentScansLoading} />
               </StatCard>
-              <StatCard
-                title="Data broker sites"
-                subtitle="50 sites scanned"
-                footerText={getFooterText(cardDonutPercentage, cardDonutState)}
-                size={cardSize}
-                isLoading={cardDonutState === 'loading'}
-                onClick={handleCardClick}
-              >
-                <DonutChart 
-                  state={cardDonutState}
-                  percentage={cardDonutPercentage} 
-                  variant="blue" 
-                  label="clear of records"
-                  defaultSpeedMultiplier={defaultSpeedMultiplier}
-                  completeSpeedMultiplier={completeSpeedMultiplier}
-                />
-              </StatCard>
-              <StatCard
-                title="Removal requests"
-                subtitle={`${cardBarChartTotal} records found`}
-                footerText={getBarChartFooterText(cardBarChartCompletedPercentage, cardBarChartState)}
-                size={cardSize}
-                isLoading={cardBarChartState === 'loading'}
-                onClick={handleBarChartCardClick}
-              >
-                <BarChart 
-                  state={cardBarChartState}
-                  total={cardBarChartTotal}
-                  completedPercentage={cardBarChartCompletedPercentage}
-                />
-              </StatCard>
+              <CardDataBrokerSites
+                state={dataBrokerState}
+                totalSites={dataBrokerTotalSites}
+                currentScanIndex={dataBrokerCurrentScanIndex}
+                currentBrokerName={dataBrokerCurrentBrokerName}
+                sitesWithRecords={dataBrokerSitesWithRecords}
+                onClick={handleDataBrokerSitesCardClick}
+              />
+              <CardRecords
+                state={cardRecordsState}
+                totalRecords={cardRecordsTotalRecords}
+                completedPercentage={cardRecordsCompletedPercentage}
+                onClick={handleRecordsCardClick}
+              />
             </div>
           </div>
         )}
@@ -342,6 +387,23 @@ function App() {
               onCurrentScanIndexChange={setDataBrokerCurrentScanIndex}
               onCurrentBrokerNameChange={setDataBrokerCurrentBrokerName}
               onSitesWithRecordsChange={setDataBrokerSitesWithRecords}
+            />
+          </div>
+        )}
+        {activePage === 'cardRecords' && (
+          <div className="page">
+            <CardRecords
+              state={cardRecordsState}
+              totalRecords={cardRecordsTotalRecords}
+              completedPercentage={cardRecordsCompletedPercentage}
+            />
+            <CardRecordsParameterPanel
+              state={cardRecordsState}
+              totalRecords={cardRecordsTotalRecords}
+              completedPercentage={cardRecordsCompletedPercentage}
+              onStateChange={setCardRecordsState}
+              onTotalRecordsChange={setCardRecordsTotalRecords}
+              onCompletedPercentageChange={setCardRecordsCompletedPercentage}
             />
           </div>
         )}

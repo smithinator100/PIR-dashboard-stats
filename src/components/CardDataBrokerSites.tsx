@@ -56,7 +56,7 @@ function CardDataBrokerSites({
       case 'scanning':
         return 'Data broker sites'
       case 'in-progress':
-        return 'Broker sites'
+        return 'Data broker sites'
       case 'complete':
         return 'Data broker sites'
     }
