@@ -21,7 +21,6 @@ const TOTAL_SITES = 50
 
 function App() {
   const [activePage, setActivePage] = useState<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | 'cardRecords' | 'logos'>('card')
-  const [cardSize] = useState<'medium' | 'large'>('medium')
   const [cardDonutState, setCardDonutState] = useState<DonutState>('loading')
   const [cardDonutPercentage, setCardDonutPercentage] = useState(0)
   const [cardBarChartState, setCardBarChartState] = useState<BarState>('loading')
@@ -117,63 +116,8 @@ function App() {
     previousPageRef.current = activePage
   }, [activePage])
 
-  // Calculate footer text based on percentage
-  const getFooterText = (percentage: number, state: DonutState): string => {
-    if (state === 'loading' || state === 'completed') {
-      return state === 'completed' 
-        ? 'All sites are clear of your personal records'
-        : '10 sites have records of your personal info'
-    }
-    const sitesWithoutRecords = Math.round((percentage / 100) * TOTAL_SITES)
-    const sitesWithRecords = TOTAL_SITES - sitesWithoutRecords
-    return `${sitesWithRecords} sites have records of your personal info`
-  }
 
-  const handleCardClick = () => {
-    // Cycle: Loading -> In-progress (20%) -> 60% -> 80% -> Completed -> Loading
-    if (cardDonutState === 'loading') {
-      // From loading, switch to in-progress starting at 20%
-      setCardDonutState('in-progress')
-      setCardDonutPercentage(cardPercentages[0])
-    } else if (cardDonutState === 'in-progress') {
-      const currentIndex = cardPercentages.indexOf(cardDonutPercentage)
-      if (currentIndex === cardPercentages.length - 1) {
-        // At 80%, switch to completed
-        setCardDonutState('completed')
-      } else {
-        // Move to next percentage
-        const nextIndex = currentIndex + 1
-        setCardDonutPercentage(cardPercentages[nextIndex])
-      }
-    } else {
-      // From completed, switch back to loading
-      setCardDonutState('loading')
-      setCardDonutPercentage(0)
-    }
-  }
 
-  const handleBarChartCardClick = () => {
-    // Cycle: Loading -> In-progress (25%) -> 50% -> 75% -> Completed -> Loading
-    if (cardBarChartState === 'loading') {
-      // From loading, switch to in-progress starting at 25%
-      setCardBarChartState('in-progress')
-      setCardBarChartCompletedPercentage(cardBarChartPercentages[0])
-    } else if (cardBarChartState === 'in-progress') {
-      const currentIndex = cardBarChartPercentages.indexOf(cardBarChartCompletedPercentage)
-      if (currentIndex === cardBarChartPercentages.length - 1) {
-        // At 75%, switch to completed
-        setCardBarChartState('completed')
-      } else {
-        // Move to next percentage
-        const nextIndex = currentIndex + 1
-        setCardBarChartCompletedPercentage(cardBarChartPercentages[nextIndex])
-      }
-    } else {
-      // From completed, switch back to loading
-      setCardBarChartState('loading')
-      setCardBarChartCompletedPercentage(0)
-    }
-  }
 
   const handleDataBrokerSitesCardClick = () => {
     // Cycle: Loading -> Scanning -> In-progress -> Complete -> Loading
@@ -236,18 +180,6 @@ function App() {
     setRecentScansState('scanning')
   }
 
-  // Calculate footer text for bar chart based on state
-  const getBarChartFooterText = (percentage: number, state: BarState): string => {
-    if (state === 'loading') {
-      return 'Processing removal requests...'
-    }
-    if (state === 'completed') {
-      return 'All removal requests have been completed'
-    }
-    const completed = Math.round((percentage / 100) * cardBarChartTotal)
-    const inProgress = cardBarChartTotal - completed
-    return `${completed} completed, ${inProgress} in-progress`
-  }
 
   return (
     <div className="app-container">

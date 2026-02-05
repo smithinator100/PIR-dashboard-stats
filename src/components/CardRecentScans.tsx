@@ -429,8 +429,6 @@ function CardRecentScans({
   const likelyOverflow = visibleItems.size > 5
   const showFade = !isLoading && !isLogos && showContent && (hasOverflow || likelyOverflow)
 
-  // Show skeleton text in loading state only
-  const showSkeletonText = isLoading
 
   return (
     <div 
