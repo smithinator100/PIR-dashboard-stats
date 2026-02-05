@@ -14,7 +14,7 @@ interface DonutParameterPanelProps {
   onCompleteSpeedMultiplierChange: (multiplier: number) => void
 }
 
-const PERCENTAGE_CHIPS = [15, 25, 50, 75, 99]
+const PERCENTAGE_CHIPS = [15, 25, 50, 75]
 const STATE_OPTIONS: { value: DonutState; label: string }[] = [
   { value: 'loading', label: 'Loading' },
   { value: 'in-progress', label: 'In Progress' },

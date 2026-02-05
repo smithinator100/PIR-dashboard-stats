@@ -52,6 +52,15 @@ const MIN_DURATION = 600
 const MAX_DURATION = 2400
 const MS_PER_POINT = 25
 
+// Success transition timing constants
+// Duration from transition start to checkmark visible (contract phase + checkmark appear)
+const SUCCESS_TRANSITION_DURATION = 200
+// Duration of text fade lead time before transition starts
+const TEXT_FADE_LEAD_TIME = 100
+// Time between phases in the success transition
+const PHASE_CONTRACT_TO_EXPAND = 200
+const PHASE_EXPAND_TO_IDLE = 150
+
 function calculateAnimationDuration(
   delta: number, 
   targetPercentage: number, 
@@ -309,7 +318,14 @@ function DonutChartOdometer({
       }
 
       const animDuration = wasInProgress ? animationDurationRef.current : 0
-      const textFadeStart = Math.round(animDuration * 0.4)
+      
+      // Calculate when to start the success transition so it completes before odometer reaches 99%
+      // transitionStartTime = animDuration - SUCCESS_TRANSITION_DURATION
+      // This ensures the checkmark appears as the odometer reaches 99%
+      const transitionStartTime = Math.max(0, animDuration - SUCCESS_TRANSITION_DURATION)
+      
+      // Text fade starts before the transition, with lead time
+      const textFadeStart = Math.max(0, transitionStartTime - TEXT_FADE_LEAD_TIME)
       
       const timer1 = setTimeout(() => {
         setIsTextScalingOut(true)
@@ -318,16 +334,16 @@ function DonutChartOdometer({
       const timer2 = setTimeout(() => {
         setShowSuccessState(true)
         setAnimationPhase('contracting')
-      }, animDuration + 50)
+      }, transitionStartTime)
 
       const timer3 = setTimeout(() => {
         setAnimationPhase('expanding')
         setShowCheckmark(true)
-      }, animDuration + 250)
+      }, transitionStartTime + PHASE_CONTRACT_TO_EXPAND)
 
       const timer4 = setTimeout(() => {
         setAnimationPhase('idle')
-      }, animDuration + 400)
+      }, transitionStartTime + PHASE_CONTRACT_TO_EXPAND + PHASE_EXPAND_TO_IDLE)
 
       return () => {
         clearTimeout(timer1)
