@@ -10,6 +10,8 @@ import { CardDataBrokerSites, type CardDataBrokerSitesState } from './components
 import { CardDataBrokerSitesParameterPanel } from './components/CardDataBrokerSitesParameterPanel'
 import { CardRecords, type CardRecordsState } from './components/CardRecords'
 import { CardRecordsParameterPanel } from './components/CardRecordsParameterPanel'
+import { CardRecentScans, type CardRecentScansState } from './components/CardRecentScans'
+import { CardRecentScansParameterPanel } from './components/CardRecentScansParameterPanel'
 import './App.css'
 import './components/BarChart.css'
 
@@ -19,7 +21,7 @@ const cardBarChartPercentages = [25, 50, 75]
 const TOTAL_SITES = 50
 
 function App() {
-  const [activePage, setActivePage] = useState<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | 'cardRecords'>('card')
+  const [activePage, setActivePage] = useState<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | 'cardRecords' | 'cardRecentScans'>('card')
   const [cardSize] = useState<'medium' | 'large'>('medium')
   const [cardDonutState, setCardDonutState] = useState<DonutState>('loading')
   const [cardDonutPercentage, setCardDonutPercentage] = useState(0)
@@ -51,8 +53,12 @@ function App() {
   const [cardRecordsTotalRecords, setCardRecordsTotalRecords] = useState(12)
   const [cardRecordsCompletedPercentage, setCardRecordsCompletedPercentage] = useState(25)
 
+  // Card Recent Scans state
+  const [cardRecentScansState, setCardRecentScansState] = useState<CardRecentScansState>('loading')
+  const [cardRecentScansCount, setCardRecentScansCount] = useState(6)
+
   // Track previous page to detect when switching TO card page
-  const previousPageRef = useRef<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | 'cardRecords' | null>(null)
+  const previousPageRef = useRef<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | 'cardRecords' | 'cardRecentScans' | null>(null)
 
   // Handle card page load sequence: loading -> in-progress transitions
   useEffect(() => {
@@ -224,6 +230,24 @@ function App() {
     }
   }
 
+  const handleRecentScansCardClick = () => {
+    // Cycle: Loading -> Scanning -> In-progress -> Complete -> Loading
+    switch (cardRecentScansState) {
+      case 'loading':
+        setCardRecentScansState('scanning')
+        break
+      case 'scanning':
+        setCardRecentScansState('in-progress')
+        break
+      case 'in-progress':
+        setCardRecentScansState('complete')
+        break
+      case 'complete':
+        setCardRecentScansState('loading')
+        break
+    }
+  }
+
   // Calculate footer text for bar chart based on state
   const getBarChartFooterText = (percentage: number, state: BarState): string => {
     if (state === 'loading') {
@@ -277,6 +301,12 @@ function App() {
             onClick={() => setActivePage('cardRecords')}
           >
             Card : Records
+          </li>
+          <li 
+            className={`sidebar-item ${activePage === 'cardRecentScans' ? 'active' : ''}`}
+            onClick={() => setActivePage('cardRecentScans')}
+          >
+            Card : Recent Scans
           </li>
         </ul>
       </div>
@@ -404,6 +434,21 @@ function App() {
               onStateChange={setCardRecordsState}
               onTotalRecordsChange={setCardRecordsTotalRecords}
               onCompletedPercentageChange={setCardRecordsCompletedPercentage}
+            />
+          </div>
+        )}
+        {activePage === 'cardRecentScans' && (
+          <div className="page">
+            <CardRecentScans
+              state={cardRecentScansState}
+              scanCount={cardRecentScansCount}
+              onClick={handleRecentScansCardClick}
+            />
+            <CardRecentScansParameterPanel
+              state={cardRecentScansState}
+              scanCount={cardRecentScansCount}
+              onStateChange={setCardRecentScansState}
+              onScanCountChange={setCardRecentScansCount}
             />
           </div>
         )}
