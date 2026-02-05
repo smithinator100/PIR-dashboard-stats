@@ -230,7 +230,7 @@ function App() {
     }
   }
 
-  const handleRecentScansCardClick = () => {
+  const handleCardRecentScansClick = () => {
     // Cycle: Loading -> Scanning -> In-progress -> Complete -> Loading
     switch (cardRecentScansState) {
       case 'loading':
@@ -442,7 +442,7 @@ function App() {
             <CardRecentScans
               state={cardRecentScansState}
               scanCount={cardRecentScansCount}
-              onClick={handleRecentScansCardClick}
+              onClick={handleCardRecentScansClick}
             />
             <CardRecentScansParameterPanel
               state={cardRecentScansState}
