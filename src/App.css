@@ -49,7 +49,7 @@
 
 .content {
   flex: 1;
-  background-color: #FAFAFA;
+  background-color: rgba(237, 237, 237, 1);
   overflow-y: auto;
   overflow-x: hidden;
   padding: 32px;

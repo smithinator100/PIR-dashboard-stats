@@ -40,6 +40,10 @@
   font-style: normal;
 }
 
+:root {
+  --skeleton-gradient: linear-gradient(120deg, rgba(0, 0, 0, 0.06) 25%, rgba(0, 0, 0, 0.03) 50%, rgba(0, 0, 0, 0.06) 75%);
+}
+
 * {
   margin: 0;
   padding: 0;

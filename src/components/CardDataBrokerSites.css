@@ -1,0 +1,133 @@
+.card-data-broker-sites {
+  width: 247px;
+  height: 360px;
+  border-radius: 24px;
+  background-color: #FAFAFA;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-data-broker-sites-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  box-sizing: border-box;
+}
+
+/* Title Section */
+.card-data-broker-sites-title {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  gap: 4px;
+  padding: 24px;
+  position: relative;
+}
+
+.card-data-broker-sites-body {
+  font-family: 'DuckSans Product', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.25em;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.card-data-broker-sites-number {
+  font-family: 'DuckSans Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.2em;
+  color: #222222;
+}
+
+/* Content Section */
+.card-data-broker-sites-content {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 24px;
+  min-height: 0;
+  overflow: visible;
+}
+
+/* Footer Section */
+.card-data-broker-sites-footer {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  align-self: stretch;
+  gap: 8px;
+  padding: 16px 24px 24px;
+  height: 88px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.card-data-broker-sites-info {
+  font-family: 'DuckSans Product', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.43em;
+  color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Hide elements without removing from DOM */
+.card-data-broker-sites .hidden {
+  visibility: hidden;
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Skeleton loading styles */
+.card-data-broker-sites .skeleton {
+  background: var(--skeleton-gradient);
+  background-size: 200% 100%;
+  animation: card-data-broker-loading 1.8s ease-in-out infinite;
+  border-radius: 1000px;
+}
+
+@keyframes card-data-broker-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.card-data-broker-sites .skeleton-text {
+  height: 20px;
+  width: 100%;
+}
+
+.card-data-broker-sites .skeleton-body {
+  width: 70%;
+  height: 16px;
+}
+
+.card-data-broker-sites .skeleton-number {
+  width: 80%;
+  height: 20px;
+  margin-top: 4px;
+}
+
+.card-data-broker-sites .skeleton-footer {
+  width: 60%;
+  height: 14px;
+}

@@ -6,6 +6,8 @@ import { BarChart, type BarState } from './components/BarChart'
 import { BarChartParameterPanel } from './components/BarChartParameterPanel'
 import { RecentScansParameterPanel } from './components/RecentScansParameterPanel'
 import { RecentScans } from './components/RecentScans'
+import { CardDataBrokerSites, type CardDataBrokerSitesState } from './components/CardDataBrokerSites'
+import { CardDataBrokerSitesParameterPanel } from './components/CardDataBrokerSitesParameterPanel'
 import './App.css'
 import './components/BarChart.css'
 
@@ -15,7 +17,7 @@ const cardBarChartPercentages = [25, 50, 75]
 const TOTAL_SITES = 50
 
 function App() {
-  const [activePage, setActivePage] = useState<'card' | 'donut' | 'barChart' | 'recentScans'>('card')
+  const [activePage, setActivePage] = useState<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites'>('card')
   const [cardSize] = useState<'medium' | 'large'>('medium')
   const [cardDonutState, setCardDonutState] = useState<DonutState>('loading')
   const [cardDonutPercentage, setCardDonutPercentage] = useState(0)
@@ -35,8 +37,15 @@ function App() {
   const [cardRecentScansLoading, setCardRecentScansLoading] = useState(true)
   const [cardScanCount, setCardScanCount] = useState(1)
 
+  // Card Data Broker Sites state
+  const [dataBrokerState, setDataBrokerState] = useState<CardDataBrokerSitesState>('loading')
+  const [dataBrokerTotalSites, setDataBrokerTotalSites] = useState(50)
+  const [dataBrokerCurrentScanIndex, setDataBrokerCurrentScanIndex] = useState(1)
+  const [dataBrokerCurrentBrokerName, setDataBrokerCurrentBrokerName] = useState('Spokeo')
+  const [dataBrokerSitesWithRecords, setDataBrokerSitesWithRecords] = useState(10)
+
   // Track previous page to detect when switching TO card page
-  const previousPageRef = useRef<'card' | 'donut' | 'barChart' | 'recentScans' | null>(null)
+  const previousPageRef = useRef<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | null>(null)
 
   // Handle card page load sequence: loading -> in-progress transitions
   useEffect(() => {
@@ -201,6 +210,12 @@ function App() {
           >
             Recent scans
           </li>
+          <li 
+            className={`sidebar-item ${activePage === 'cardDataBrokerSites' ? 'active' : ''}`}
+            onClick={() => setActivePage('cardDataBrokerSites')}
+          >
+            Card : Data Broker Sites
+          </li>
         </ul>
       </div>
       <div className="content">
@@ -304,6 +319,29 @@ function App() {
               isLoading={recentScansLoading}
               onScanCountChange={setScanCount}
               onLoadingChange={setRecentScansLoading}
+            />
+          </div>
+        )}
+        {activePage === 'cardDataBrokerSites' && (
+          <div className="page">
+            <CardDataBrokerSites
+              state={dataBrokerState}
+              totalSites={dataBrokerTotalSites}
+              currentScanIndex={dataBrokerCurrentScanIndex}
+              currentBrokerName={dataBrokerCurrentBrokerName}
+              sitesWithRecords={dataBrokerSitesWithRecords}
+            />
+            <CardDataBrokerSitesParameterPanel
+              state={dataBrokerState}
+              totalSites={dataBrokerTotalSites}
+              currentScanIndex={dataBrokerCurrentScanIndex}
+              currentBrokerName={dataBrokerCurrentBrokerName}
+              sitesWithRecords={dataBrokerSitesWithRecords}
+              onStateChange={setDataBrokerState}
+              onTotalSitesChange={setDataBrokerTotalSites}
+              onCurrentScanIndexChange={setDataBrokerCurrentScanIndex}
+              onCurrentBrokerNameChange={setDataBrokerCurrentBrokerName}
+              onSitesWithRecordsChange={setDataBrokerSitesWithRecords}
             />
           </div>
         )}

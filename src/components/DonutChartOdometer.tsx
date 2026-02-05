@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'motion/react'
 import './DonutChartOdometer.css'
 
-type DonutState = 'loading' | 'in-progress' | 'completed'
+type DonutState = 'loading' | 'scanning' | 'in-progress' | 'completed'
 
 interface DonutChartOdometerProps {
   state: DonutState
@@ -94,8 +94,8 @@ function DonutChartOdometer({
   defaultSpeedMultiplier = 0.5,
   completeSpeedMultiplier = 0.2
 }: DonutChartOdometerProps) {
-  const size = 169
-  const strokeWidth = 10
+  const size = 168
+  const strokeWidth = 12
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
   
@@ -107,9 +107,10 @@ function DonutChartOdometer({
   const offset = circumference - (displayPercentage / 100) * circumference
   
   const isLoading = state === 'loading'
+  const isScanning = state === 'scanning'
   const isComplete = state === 'completed'
 
-  const innerRingSize = 149
+  const innerRingSize = 144
   const innerRingRadius = (innerRingSize - strokeWidth) / 2
   
   const [showSuccessState, setShowSuccessState] = useState(state === 'completed')
@@ -118,8 +119,8 @@ function DonutChartOdometer({
   const [showCheckmark, setShowCheckmark] = useState(state === 'completed')
   const animateTo99TimerRef = useRef<number | null>(null)
 
-  const strokeColor = variant === 'blue' ? '#A1D0F7' : '#CFEBDA'
-  const activeColor = variant === 'blue' ? '#1074CC' : '#589D88'
+  const strokeColor = variant === 'blue' ? 'rgba(0, 0, 0, 0.06)' : 'rgba(0, 0, 0, 0.06)'
+  const activeColor = variant === 'blue' ? '#4397E0' : '#589D88'
   // const innerFillColor = variant === 'blue' ? '#E8F4FD' : '#CFEBDA'
   
   const displayStrokeColor = showSuccessState ? SUCCESS_COLORS.outerStroke : strokeColor
@@ -386,10 +387,11 @@ function DonutChartOdometer({
           r={radius}
           fill="none"
           strokeWidth={strokeWidth}
-          animate={{ stroke: isLoading ? '#E5E5E5' : displayStrokeColor }}
+          strokeLinecap="round"
+          animate={{ stroke: (isLoading || isScanning) ? 'rgba(0, 0, 0, 0.06)' : displayStrokeColor }}
           transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
         />
-        {/* Progress circle - hidden when loading */}
+        {/* Progress circle - hidden when loading or scanning */}
         <motion.circle
           className="donut-progress-circle"
           cx={size / 2}
@@ -402,8 +404,8 @@ function DonutChartOdometer({
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
           animate={{
             stroke: displayActiveColor,
-            strokeDashoffset: isLoading ? circumference : offset,
-            opacity: isLoading ? 0 : 1
+            strokeDashoffset: (isLoading || isScanning) ? circumference : offset,
+            opacity: (isLoading || isScanning) ? 0 : 1
           }}
           transition={{ 
             strokeDashoffset: { duration: animationDuration / 1000, ease: isAnimatingTo99 ? 'linear' : EASE_OUT_EXPO },
@@ -419,10 +421,11 @@ function DonutChartOdometer({
           r={innerRingRadius}
           stroke="#FFFFFF"
           strokeWidth={strokeWidth}
+          strokeLinecap="round"
           fill={SUCCESS_COLORS.innerFill}
           animate={{ 
-            fillOpacity: showSuccessState ? 1 : 0,
-            strokeOpacity: isLoading ? 0 : 1
+            fillOpacity: showSuccessState && !isScanning ? 1 : 0,
+            strokeOpacity: isComplete && !isScanning ? 1 : 0
           }}
           transition={{ 
             fillOpacity: { duration: 0.2, ease: 'easeOut' },
@@ -430,6 +433,17 @@ function DonutChartOdometer({
           }}
         />
       </svg>
+
+      {/* Scanning sweep - rotating conic gradient */}
+      <motion.div
+        className="donut-scan-sweep"
+        initial={{ opacity: 0 }}
+        animate={{ 
+          opacity: isScanning ? 1 : 0
+        }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        style={{ pointerEvents: 'none' }}
+      />
 
       {/* Success checkmark - positioned at center of donut */}
       <motion.div 
@@ -466,15 +480,15 @@ function DonutChartOdometer({
       {/* Percentage and label */}
       <motion.div 
         className="donut-chart-text"
-        initial={{ x: '-50%', y: '-50%', opacity: isLoading ? 0 : 1, scale: isLoading ? 0.85 : 1 }}
+        initial={{ x: '-50%', y: '-50%', opacity: (isLoading || isScanning) ? 0 : 1, scale: (isLoading || isScanning) ? 0.85 : 1 }}
         animate={{ 
-          opacity: isLoading ? 0 : (showCheckmark ? 0 : (isTextScalingOut ? 0 : 1)), 
-          scale: isLoading ? 0.85 : (showCheckmark ? 0.85 : (isTextScalingOut ? 0.85 : 1)),
+          opacity: (isLoading || isScanning) ? 0 : (showCheckmark ? 0 : (isTextScalingOut ? 0 : 1)), 
+          scale: (isLoading || isScanning) ? 0.85 : (showCheckmark ? 0.85 : (isTextScalingOut ? 0.85 : 1)),
           x: '-50%',
           y: '-50%'
         }}
         transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
-        style={{ pointerEvents: isLoading || showCheckmark ? 'none' : 'auto' }}
+        style={{ pointerEvents: (isLoading || isScanning) || showCheckmark ? 'none' : 'auto' }}
       >
             {/* Percentage odometer */}
             <div className="donut-percentage-odometer">
