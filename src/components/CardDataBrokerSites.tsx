@@ -101,7 +101,7 @@ function CardDataBrokerSites({
     >
       <motion.div
         className="card-data-broker-sites-wrapper"
-        animate={{ scale: isLoading ? 0.85 : 1 }}
+        animate={{ scale: isLoading ? 0.7 : 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       >
         {/* Title Section */}

@@ -47,6 +47,20 @@
   font-weight: 500;
 }
 
+.sidebar-subheader {
+  padding: 12px 24px 8px;
+  color: rgba(191, 191, 191, 1);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+}
+
+.sidebar-subheader:first-of-type {
+  margin-top: 0;
+}
+
 .content {
   flex: 1;
   background-color: rgba(237, 237, 237, 1);

@@ -43,6 +43,10 @@ const progressTransition = {
   ease: [0.22, 1, 0.36, 1] as const
 }
 
+// Color values for the bar
+const barColorStart = 'rgba(159, 110, 184, 0.3)' // Light purple (starting)
+const barColorEnd = '#9F6EB8' // Full purple (completed)
+
 function BarChart({ state, total, completedPercentage }: BarChartProps) {
   const completed = Math.round((completedPercentage / 100) * total)
 
@@ -53,6 +57,9 @@ function BarChart({ state, total, completedPercentage }: BarChartProps) {
   // Display percentage: use 100% when completed, otherwise use prop
   const displayPercentage = isComplete ? 100 : completedPercentage
   const displayCompleted = isComplete ? total : completed
+
+  // Determine bar color based on completion
+  const barColor = isComplete ? barColorEnd : barColorStart
 
   return (
     <div className="bar-chart">
@@ -67,8 +74,11 @@ function BarChart({ state, total, completedPercentage }: BarChartProps) {
         {/* Progress fill */}
         <motion.div 
           className="bar-chart-progress"
-          initial={{ width: '0%' }}
-          animate={{ width: isLoading ? '0%' : `${displayPercentage}%` }}
+          initial={{ width: '0%', backgroundColor: barColorStart }}
+          animate={{ 
+            width: isLoading ? '0%' : `${displayPercentage}%`,
+            backgroundColor: isLoading ? barColorStart : barColor
+          }}
           transition={progressTransition}
         />
       </div>

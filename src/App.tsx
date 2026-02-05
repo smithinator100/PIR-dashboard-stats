@@ -1,17 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
-import { StatCard } from './components/StatCard'
 import { DonutParameterPanel } from './components/DonutParameterPanel'
 import DonutChart, { type DonutState } from './components/DonutChartOdometer'
 import { BarChart, type BarState } from './components/BarChart'
 import { BarChartParameterPanel } from './components/BarChartParameterPanel'
-import { RecentScansParameterPanel } from './components/RecentScansParameterPanel'
-import { RecentScans } from './components/RecentScans'
 import { CardDataBrokerSites, type CardDataBrokerSitesState } from './components/CardDataBrokerSites'
 import { CardDataBrokerSitesParameterPanel } from './components/CardDataBrokerSitesParameterPanel'
 import { CardRecords, type CardRecordsState } from './components/CardRecords'
 import { CardRecordsParameterPanel } from './components/CardRecordsParameterPanel'
 import { CardRecentScans, type CardRecentScansState } from './components/CardRecentScans'
 import { CardRecentScansParameterPanel } from './components/CardRecentScansParameterPanel'
+import { LogoAnimation } from './components/LogoAnimation'
+import { LogoAnimationParameterPanel } from './components/LogoAnimationParameterPanel'
 import './App.css'
 import './components/BarChart.css'
 
@@ -21,7 +20,7 @@ const cardBarChartPercentages = [25, 50, 75]
 const TOTAL_SITES = 50
 
 function App() {
-  const [activePage, setActivePage] = useState<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | 'cardRecords' | 'cardRecentScans'>('card')
+  const [activePage, setActivePage] = useState<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | 'cardRecords' | 'logos'>('card')
   const [cardSize] = useState<'medium' | 'large'>('medium')
   const [cardDonutState, setCardDonutState] = useState<DonutState>('loading')
   const [cardDonutPercentage, setCardDonutPercentage] = useState(0)
@@ -36,10 +35,6 @@ function App() {
   const [barChartState, setBarChartState] = useState<BarState>('in-progress')
   const [barChartTotal, setBarChartTotal] = useState(12)
   const [barChartCompletedPercentage, setBarChartCompletedPercentage] = useState(50)
-  const [scanCount, setScanCount] = useState(6)
-  const [recentScansLoading, setRecentScansLoading] = useState(false)
-  const [cardRecentScansLoading, setCardRecentScansLoading] = useState(true)
-  const [cardScanCount, setCardScanCount] = useState(1)
 
   // Card Data Broker Sites state
   const [dataBrokerState, setDataBrokerState] = useState<CardDataBrokerSitesState>('loading')
@@ -54,11 +49,26 @@ function App() {
   const [cardRecordsCompletedPercentage, setCardRecordsCompletedPercentage] = useState(25)
 
   // Card Recent Scans state
-  const [cardRecentScansState, setCardRecentScansState] = useState<CardRecentScansState>('loading')
-  const [cardRecentScansCount, setCardRecentScansCount] = useState(6)
+  const [recentScansState, setRecentScansState] = useState<CardRecentScansState>('loading')
+  const [recentScansCount, setRecentScansCount] = useState(6)
+  const [recentScansRemovalBroker, setRecentScansRemovalBroker] = useState('Verecor')
+  const [recentScansRemovalRecordCount, setRecentScansRemovalRecordCount] = useState(3)
+  const [recentScansLogoColumns, setRecentScansLogoColumns] = useState(8)
+  const [recentScansLogoRows, setRecentScansLogoRows] = useState(4)
+  const [recentScansLogoSize, setRecentScansLogoSize] = useState(32)
+
+  // Logo Animation state (standalone page)
+  const [logoColumns, setLogoColumns] = useState(7)
+  const [logoRows, setLogoRows] = useState(4)
+  const [logoSize, setLogoSize] = useState(24)
+  const [logoWaveDelay, setLogoWaveDelay] = useState(600)
+  const [logoDuration, setLogoDuration] = useState(3)
+  const [logoHoldDelay, setLogoHoldDelay] = useState(0.8)
+  const [logoEasingIn, setLogoEasingIn] = useState('cubic-in-out')
+  const [logoEasingOut, setLogoEasingOut] = useState('cubic-in-out')
 
   // Track previous page to detect when switching TO card page
-  const previousPageRef = useRef<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | 'cardRecords' | 'cardRecentScans' | null>(null)
+  const previousPageRef = useRef<'card' | 'donut' | 'barChart' | 'recentScans' | 'cardDataBrokerSites' | 'cardRecords' | 'logos' | null>(null)
 
   // Handle card page load sequence: loading -> in-progress transitions
   useEffect(() => {
@@ -71,8 +81,7 @@ function App() {
     if (isInitialLoad || isSwitchingToCard) {
       // Reset states to loading first (only if switching pages, not on initial load)
       if (isSwitchingToCard) {
-        setCardRecentScansLoading(true)
-        setCardScanCount(1)
+        setRecentScansState('loading')
         setCardDonutState('loading')
         setCardDonutPercentage(0)
         setCardBarChartState('loading')
@@ -80,9 +89,9 @@ function App() {
       }
 
       // Stagger effect: Recent Scans first, then Donut, then Bar Chart
-      // After 1400ms, transition Recent Scans to loaded
+      // After 1400ms, transition Recent Scans to scanning
       const recentScansTimer = setTimeout(() => {
-        setCardRecentScansLoading(false)
+        setRecentScansState('scanning')
       }, 1400)
 
       // After 1600ms, transition donut to in-progress
@@ -166,21 +175,6 @@ function App() {
     }
   }
 
-  const handleRecentScansCardClick = () => {
-    // Cycle: 1 broker -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 brokers -> Loading -> 1 broker
-    if (cardRecentScansLoading) {
-      // From loading, go back to 1 broker
-      setCardRecentScansLoading(false)
-      setCardScanCount(1)
-    } else if (cardScanCount < 8) {
-      // Add another broker
-      setCardScanCount(cardScanCount + 1)
-    } else {
-      // At 8 brokers, switch to loading
-      setCardRecentScansLoading(true)
-    }
-  }
-
   const handleDataBrokerSitesCardClick = () => {
     // Cycle: Loading -> Scanning -> In-progress -> Complete -> Loading
     switch (dataBrokerState) {
@@ -230,22 +224,16 @@ function App() {
     }
   }
 
-  const handleCardRecentScansClick = () => {
-    // Cycle: Loading -> Scanning -> In-progress -> Complete -> Loading
-    switch (cardRecentScansState) {
-      case 'loading':
-        setCardRecentScansState('scanning')
-        break
-      case 'scanning':
-        setCardRecentScansState('in-progress')
-        break
-      case 'in-progress':
-        setCardRecentScansState('complete')
-        break
-      case 'complete':
-        setCardRecentScansState('loading')
-        break
-    }
+  const handleRecentScansClick = () => {
+    // Cycle through all states: Loading (skeleton) -> Logos -> Scanning -> Removal -> Loading
+    const stateOrder: CardRecentScansState[] = ['loading', 'logos', 'scanning', 'removal']
+    const currentIndex = stateOrder.indexOf(recentScansState)
+    const nextIndex = (currentIndex + 1) % stateOrder.length
+    setRecentScansState(stateOrder[nextIndex])
+  }
+
+  const handleRecentScansDismiss = () => {
+    setRecentScansState('scanning')
   }
 
   // Calculate footer text for bar chart based on state
@@ -270,8 +258,28 @@ function App() {
             className={`sidebar-item ${activePage === 'card' ? 'active' : ''}`}
             onClick={() => setActivePage('card')}
           >
-            Card
+            Dashboard
           </li>
+          <li className="sidebar-subheader">Cards</li>
+          <li 
+            className={`sidebar-item ${activePage === 'recentScans' ? 'active' : ''}`}
+            onClick={() => setActivePage('recentScans')}
+          >
+            Recent Scans
+          </li>
+          <li 
+            className={`sidebar-item ${activePage === 'cardDataBrokerSites' ? 'active' : ''}`}
+            onClick={() => setActivePage('cardDataBrokerSites')}
+          >
+            Data Broker Sites
+          </li>
+          <li 
+            className={`sidebar-item ${activePage === 'cardRecords' ? 'active' : ''}`}
+            onClick={() => setActivePage('cardRecords')}
+          >
+            Records
+          </li>
+          <li className="sidebar-subheader">Charts</li>
           <li 
             className={`sidebar-item ${activePage === 'donut' ? 'active' : ''}`}
             onClick={() => setActivePage('donut')}
@@ -282,31 +290,13 @@ function App() {
             className={`sidebar-item ${activePage === 'barChart' ? 'active' : ''}`}
             onClick={() => setActivePage('barChart')}
           >
-            Bar Chart
+            Bar
           </li>
           <li 
-            className={`sidebar-item ${activePage === 'recentScans' ? 'active' : ''}`}
-            onClick={() => setActivePage('recentScans')}
+            className={`sidebar-item ${activePage === 'logos' ? 'active' : ''}`}
+            onClick={() => setActivePage('logos')}
           >
-            Recent scans
-          </li>
-          <li 
-            className={`sidebar-item ${activePage === 'cardDataBrokerSites' ? 'active' : ''}`}
-            onClick={() => setActivePage('cardDataBrokerSites')}
-          >
-            Card : Data Broker Sites
-          </li>
-          <li 
-            className={`sidebar-item ${activePage === 'cardRecords' ? 'active' : ''}`}
-            onClick={() => setActivePage('cardRecords')}
-          >
-            Card : Records
-          </li>
-          <li 
-            className={`sidebar-item ${activePage === 'cardRecentScans' ? 'active' : ''}`}
-            onClick={() => setActivePage('cardRecentScans')}
-          >
-            Card : Recent Scans
+            Logos
           </li>
         </ul>
       </div>
@@ -314,16 +304,17 @@ function App() {
         {activePage === 'card' && (
           <div className="page">
             <div className="stats-grid">
-              <StatCard
-                title="Recent scans"
-                subtitle="Recent scans"
-                footerText="Next scan is 19 Jan"
-                size="large"
-                isLoading={cardRecentScansLoading}
-                onClick={handleRecentScansCardClick}
-              >
-                <RecentScans scanCount={cardScanCount} isLoading={cardRecentScansLoading} />
-              </StatCard>
+              <CardRecentScans
+                state={recentScansState}
+                scanCount={recentScansCount}
+                removalBroker={recentScansRemovalBroker}
+                removalRecordCount={recentScansRemovalRecordCount}
+                logoColumns={recentScansLogoColumns}
+                logoRows={recentScansLogoRows}
+                logoSize={recentScansLogoSize}
+                onDismiss={handleRecentScansDismiss}
+                onClick={handleRecentScansClick}
+              />
               <CardDataBrokerSites
                 state={dataBrokerState}
                 totalSites={dataBrokerTotalSites}
@@ -385,15 +376,33 @@ function App() {
           </div>
         )}
         {activePage === 'recentScans' && (
-          <div className="page recent-scans-page">
-            <div className="recent-scans-page-container">
-              <RecentScans scanCount={scanCount} isLoading={recentScansLoading} />
-            </div>
-            <RecentScansParameterPanel
-              scanCount={scanCount}
-              isLoading={recentScansLoading}
-              onScanCountChange={setScanCount}
-              onLoadingChange={setRecentScansLoading}
+          <div className="page">
+            <CardRecentScans
+              state={recentScansState}
+              scanCount={recentScansCount}
+              removalBroker={recentScansRemovalBroker}
+              removalRecordCount={recentScansRemovalRecordCount}
+              logoColumns={recentScansLogoColumns}
+              logoRows={recentScansLogoRows}
+              logoSize={recentScansLogoSize}
+              onDismiss={handleRecentScansDismiss}
+              onClick={handleRecentScansClick}
+            />
+            <CardRecentScansParameterPanel
+              state={recentScansState}
+              scanCount={recentScansCount}
+              removalBroker={recentScansRemovalBroker}
+              removalRecordCount={recentScansRemovalRecordCount}
+              logoColumns={recentScansLogoColumns}
+              logoRows={recentScansLogoRows}
+              logoSize={recentScansLogoSize}
+              onStateChange={setRecentScansState}
+              onScanCountChange={setRecentScansCount}
+              onRemovalBrokerChange={setRecentScansRemovalBroker}
+              onRemovalRecordCountChange={setRecentScansRemovalRecordCount}
+              onLogoColumnsChange={setRecentScansLogoColumns}
+              onLogoRowsChange={setRecentScansLogoRows}
+              onLogoSizeChange={setRecentScansLogoSize}
             />
           </div>
         )}
@@ -437,18 +446,35 @@ function App() {
             />
           </div>
         )}
-        {activePage === 'cardRecentScans' && (
+        {activePage === 'logos' && (
           <div className="page">
-            <CardRecentScans
-              state={cardRecentScansState}
-              scanCount={cardRecentScansCount}
-              onClick={handleCardRecentScansClick}
+            <LogoAnimation
+              columns={logoColumns}
+              rows={logoRows}
+              logoSize={logoSize}
+              waveDelay={logoWaveDelay}
+              duration={logoDuration}
+              holdDelay={logoHoldDelay}
+              easingIn={logoEasingIn}
+              easingOut={logoEasingOut}
             />
-            <CardRecentScansParameterPanel
-              state={cardRecentScansState}
-              scanCount={cardRecentScansCount}
-              onStateChange={setCardRecentScansState}
-              onScanCountChange={setCardRecentScansCount}
+            <LogoAnimationParameterPanel
+              columns={logoColumns}
+              rows={logoRows}
+              logoSize={logoSize}
+              waveDelay={logoWaveDelay}
+              duration={logoDuration}
+              holdDelay={logoHoldDelay}
+              easingIn={logoEasingIn}
+              easingOut={logoEasingOut}
+              onColumnsChange={setLogoColumns}
+              onRowsChange={setLogoRows}
+              onLogoSizeChange={setLogoSize}
+              onWaveDelayChange={setLogoWaveDelay}
+              onDurationChange={setLogoDuration}
+              onHoldDelayChange={setLogoHoldDelay}
+              onEasingInChange={setLogoEasingIn}
+              onEasingOutChange={setLogoEasingOut}
             />
           </div>
         )}

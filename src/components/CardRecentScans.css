@@ -1,5 +1,5 @@
 .card-recent-scans {
-  width: 247px;
+  width: 523px;
   height: 360px;
   border-radius: 24px;
   background-color: #FAFAFA;
@@ -36,7 +36,7 @@
   flex-direction: column;
   align-self: stretch;
   gap: 4px;
-  padding: 24px;
+  padding: 24px 24px 8px;
   position: relative;
 }
 
@@ -61,12 +61,121 @@
   flex: 1;
   width: 100%;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  justify-content: stretch;
+  align-items: stretch;
   padding: 0 24px;
   min-height: 0;
-  overflow: visible;
   position: relative;
+  overflow: hidden;
+}
+
+.card-recent-scans-content::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, rgba(250, 250, 250, 0), rgba(250, 250, 250, 1));
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.card-recent-scans-content.has-overflow::after {
+  opacity: 1;
+}
+
+.card-recent-scans-content.no-overflow::after {
+  opacity: 0;
+}
+
+.broker-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 475px;
+  flex: 1;
+  overflow-y: hidden;
+  min-height: 0;
+}
+
+.broker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  position: relative;
+}
+
+.skeleton-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.broker-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  align-self: stretch;
+  gap: 12px;
+  width: 100%;
+}
+
+.broker-row-wrapper {
+  width: 100%;
+  overflow: visible;
+}
+
+.broker-logo {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.broker-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.broker-name {
+  flex: 1;
+  font-family: 'DuckSans Product', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.25em;
+  color: #222222;
+  text-align: left;
+}
+
+.broker-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.broker-icon svg {
+  width: 24px;
+  height: 24px;
 }
 
 /* Footer Section */
@@ -77,9 +186,7 @@
   align-self: stretch;
   gap: 8px;
   padding: 16px 24px 24px;
-  height: 88px;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 .card-recent-scans-info {
@@ -135,4 +242,141 @@
 .card-recent-scans .skeleton-footer {
   width: 60%;
   height: 14px;
+}
+
+.card-recent-scans .skeleton-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.card-recent-scans .skeleton-name {
+  flex: 1;
+  height: 20px;
+  width: 100%;
+}
+
+.card-recent-scans .skeleton-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Removal State */
+.card-recent-scans-removal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+.removal-lottie-container {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.removal-lottie-container > svg,
+.removal-lottie-container > div {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 234px !important;
+  height: 234px !important;
+}
+
+.removal-text-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-self: stretch;
+  gap: 8px;
+}
+
+.removal-title {
+  font-family: 'DuckSans Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.17em;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: #222222;
+  margin: 0;
+  white-space: pre-line;
+}
+
+.card-recent-scans-removal .removal-description {
+  font-family: 'DuckSans Product', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.25em;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.6);
+  margin: 0;
+}
+
+.removal-dismiss-button {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  background-color: rgba(0, 0, 0, 0.06);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: 'DuckSans Product', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.22em;
+  color: rgba(0, 0, 0, 0.84);
+  transition: background-color 150ms ease-out;
+}
+
+.removal-dismiss-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.removal-dismiss-button:active {
+  background-color: rgba(0, 0, 0, 0.14);
+}
+
+/* Logo Grid State */
+.logo-grid-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.logo-grid {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+}
+
+.logo-grid-item {
+  position: absolute;
+  transform: scale(0);
+  transform-origin: center center;
+  object-fit: contain;
+  pointer-events: none;
+  border-radius: 50%;
 }

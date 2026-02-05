@@ -1,0 +1,146 @@
+.logo-parameter-panel {
+  position: fixed;
+  bottom: 0;
+  left: 280px;
+  right: 0;
+  padding: 24px 32px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #E5E5E5;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+  z-index: 10;
+}
+
+.logo-parameter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px 48px;
+  max-width: 800px;
+}
+
+.logo-parameter-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.logo-parameter-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.logo-parameter-row:first-child {
+  margin-top: 0;
+}
+
+.logo-parameter-label {
+  font-family: 'DuckSans Product', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4em;
+  color: #1A1A1A;
+}
+
+.logo-parameter-value {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', monospace;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.4em;
+  color: #666666;
+  background-color: #F2F2F2;
+  padding: 4px 10px;
+  border-radius: 6px;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Slider styles */
+.logo-parameter-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: #E5E5E5;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.logo-parameter-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #3969EF;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.logo-parameter-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(57, 105, 239, 0.4);
+}
+
+.logo-parameter-slider::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+}
+
+.logo-parameter-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #3969EF;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.logo-parameter-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(57, 105, 239, 0.4);
+}
+
+.logo-parameter-slider::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  background: #E5E5E5;
+  border-radius: 3px;
+}
+
+/* Select dropdown styles */
+.logo-parameter-select {
+  padding: 10px 36px 10px 16px;
+  background-color: #F2F2F2;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-family: 'DuckSans Product', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.4em;
+  color: #1A1A1A;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231A1A1A' d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.logo-parameter-select:hover {
+  background-color: #E8E8E8;
+  border-color: #D0D0D0;
+}
+
+.logo-parameter-select:focus {
+  background-color: #FFFFFF;
+  border-color: #3969EF;
+  box-shadow: 0 0 0 3px rgba(57, 105, 239, 0.1);
+}
